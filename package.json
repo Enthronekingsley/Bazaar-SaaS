@@ -18,7 +18,8 @@
   },
   "packageManager": "npm@11.10.1",
   "workspaces": [
-    "apps/*",
+    "apps/bazaar-app",
+    "apps/bazaar-site",
     "packages/*"
   ],
   "dependencies": {
