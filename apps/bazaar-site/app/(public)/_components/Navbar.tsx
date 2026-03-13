@@ -120,7 +120,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-3">
             <Link
-              href="http://localhost:3001/sign-in"
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/sign-in`}
               className="text-sm font-medium text-gray-700 hover:text-primary transition-colors hidden sm:block relative py-2 group"
               onMouseEnter={() => setHoveredLink("signin")}
               onMouseLeave={() => setHoveredLink(null)}
