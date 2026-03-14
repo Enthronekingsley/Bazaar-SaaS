@@ -1,5 +1,5 @@
 {
-  "name": "BAZAAR-SAAS-B",
+  "name": "BAZAAR-SAAS",
   "private": true,
   "scripts": {
     "build": "turbo run build",

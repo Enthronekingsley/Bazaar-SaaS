@@ -9,7 +9,7 @@ export default function OnboardingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Link href="/" className="inline-block">
           <Image
-            src="/bazaar_logo_blue.png"
+            src="/logos/bazaar_logo_blue.png"
             alt="Bazaar"
             width={120}
             height={48}
