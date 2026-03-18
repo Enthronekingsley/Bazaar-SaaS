@@ -155,60 +155,67 @@ const Navbar = () => {
             </Link>
 
             <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-              {menuItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="relative"
-                  onMouseEnter={() => setActiveDropdown(item.label)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  <Link
-                    href={item.href}
-                    className="relative px-3 py-2 rounded-lg group"
-                    onMouseEnter={() => setHoveredLink(item.label)}
-                    onMouseLeave={() => setHoveredLink(null)}
+              {menuItems.map((item) => {
+                const isParentActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+
+                return (
+                  <div
+                    key={item.label}
+                    className="relative"
+                    onMouseEnter={() => setActiveDropdown(item.label)}
+                    onMouseLeave={() => setActiveDropdown(null)}
                   >
-                    <span className="text-sm font-medium text-gray-700 hover:text-primary transition-colors inline-flex items-center gap-1.5">
-                      {item.icon}
-                      {item.label}
-                      {item.dropdown && (
-                        <ChevronDown
-                          className={`h-3.5 w-3.5 transition-all duration-300 ${
-                            activeDropdown === item.label
-                              ? "rotate-180 text-primary"
-                              : ""
-                          }`}
-                        />
-                      )}
-                    </span>
-
-                    <span
-                      className={`absolute inset-0 bg-gray-50 rounded-lg transition-all duration-300 -z-10 ${
-                        hoveredLink === item.label
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-95"
+                    <Link
+                      href={item.href}
+                      className={`relative px-3 py-2 rounded-lg group ${
+                        isParentActive ? "text-primary" : ""
                       }`}
-                    />
+                      onMouseEnter={() => setHoveredLink(item.label)}
+                      onMouseLeave={() => setHoveredLink(null)}
+                    >
+                      <span className="text-sm font-medium text-gray-700 hover:text-primary transition-colors inline-flex items-center gap-1.5">
+                        {item.icon}
+                        {item.label}
+                        {item.dropdown && (
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-all duration-300 ${
+                              activeDropdown === item.label
+                                ? "rotate-180 text-primary"
+                                : ""
+                            }`}
+                          />
+                        )}
+                      </span>
 
-                    <span
-                      className={`absolute bottom-0 left-1/2 h-0.5 bg-primary transition-all duration-300 -translate-x-1/2 ${
-                        hoveredLink === item.label ? "w-8" : "w-0"
-                      }`}
-                    />
-                  </Link>
+                      <span
+                        className={`absolute inset-0 bg-gray-50 rounded-lg transition-all duration-300 -z-10 ${
+                          hoveredLink === item.label
+                            ? "opacity-100 scale-100"
+                            : "opacity-0 scale-95"
+                        }`}
+                      />
 
-                  <AnimatePresence>
-                    {item.dropdown && activeDropdown === item.label && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-full left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden"
-                      >
-                        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-primary-500 to-primary-400" />
+                      <span
+                        className={`absolute bottom-0 left-1/2 h-0.5 bg-primary transition-all duration-300 -translate-x-1/2 ${
+                          hoveredLink === item.label ? "w-8" : "w-0"
+                        }`}
+                      />
+                    </Link>
 
-                        {/* {item.dropdown.map((dropItem, idx) => (
+                    <AnimatePresence>
+                      {item.dropdown && activeDropdown === item.label && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute top-full left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden"
+                        >
+                          <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-primary-500 to-primary-400" />
+
+                          {/* {item.dropdown.map((dropItem, idx) => (
                           <Link
                             key={dropItem.label}
                             href={dropItem.href}
@@ -226,52 +233,53 @@ const Navbar = () => {
                           </Link>
                         ))} */}
 
-                        {item.dropdown.map((dropItem) => {
-                          const isActive = pathname === dropItem.href;
+                          {item.dropdown.map((dropItem) => {
+                            const isActive = pathname === dropItem.href;
 
-                          return (
-                            <Link
-                              key={dropItem.label}
-                              href={dropItem.href}
-                              className={`flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all group relative
+                            return (
+                              <Link
+                                key={dropItem.label}
+                                href={dropItem.href}
+                                className={`flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all group relative
         ${
           isActive
             ? "text-primary bg-primary/5"
             : "text-gray-700 hover:bg-gray-50 hover:text-primary"
         }
       `}
-                            >
-                              <span
-                                className={`transition-colors ${
-                                  isActive
-                                    ? "text-primary"
-                                    : "text-gray-400 group-hover:text-primary"
-                                }`}
                               >
-                                {dropItem.icon}
-                              </span>
+                                <span
+                                  className={`transition-colors ${
+                                    isActive
+                                      ? "text-primary"
+                                      : "text-gray-400 group-hover:text-primary"
+                                  }`}
+                                >
+                                  {dropItem.icon}
+                                </span>
 
-                              <span className="flex-1">{dropItem.label}</span>
+                                <span className="flex-1">{dropItem.label}</span>
 
-                              <ArrowRight
-                                className={`h-3.5 w-3.5 transition-all ${
-                                  isActive
-                                    ? "text-primary opacity-100 translate-x-0"
-                                    : "text-gray-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
-                                }`}
-                              />
+                                <ArrowRight
+                                  className={`h-3.5 w-3.5 transition-all ${
+                                    isActive
+                                      ? "text-primary opacity-100 translate-x-0"
+                                      : "text-gray-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
+                                  }`}
+                                />
 
-                              {isActive && (
-                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+                                {isActive && (
+                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                                )}
+                              </Link>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -345,7 +353,7 @@ const Navbar = () => {
                     alt="Bazaar"
                     width={100}
                     height={40}
-                    className="h-4 w-auto"
+                    className="h-5 w-auto"
                   />
                   <Button
                     variant="ghost"
@@ -353,7 +361,7 @@ const Navbar = () => {
                     className="rounded-lg h-9 w-9"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <X className="h-4 w-5" />
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
 
