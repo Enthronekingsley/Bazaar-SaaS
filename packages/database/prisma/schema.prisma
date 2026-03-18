@@ -41,29 +41,205 @@ enum ProductStatus {
   PUBLISHED
 }
 
+enum ConsentSubjectType {
+  STORE
+  USER
+}
+
+enum ConsentType {
+  TERMS
+  MARKETING
+  PRIVACY
+}
+
+enum OrderStatus {
+  CREATED
+  CONFIRMED
+  PROCESSING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum SearchContext {
+  GLOBAL
+  STORE
+  TAG
+  CATEGORY
+  PRODUCT
+}
+
+enum SearchSource {
+  WEB
+  MOBILE
+}
+
+enum AggregateWindow {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ProductEventType {
+  VIEW
+  ADD_TO_CART
+  PURCHASE
+}
+
+enum EventSource {
+  WEB
+  MOBILE
+}
+
+enum GatewayProvider {
+  PAYSTACK
+  FLUTTERWAVE
+  STRIPE
+  SEERBIT
+  OPAY
+}
+
+enum PaymentIntentStatus {
+  CREATED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum EscrowStatus {
+  HOLDING
+  RELEASED
+  DISPUTED
+  CANCELLED
+}
+
+enum EscrowReleaseReason {
+  BUYER_CONFIRMED
+  AUTO_TIMEOUT
+  ADMIN_RELEASE
+  DISPUTE_RESOLUTION
+}
+
+enum LedgerMovementCategory {
+  PAYMENT
+  RELEASE
+  FEE
+  REFUND
+  PAYOUT
+  DISPUTE
+}
+
+enum AccountType {
+  BUYER
+  SELLER
+  ESCROW
+  PLATFORM
+  GATEWAY
+  BANK
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  FAILED
+  PAID
+}
+
+enum LedgerDirection {
+  IN
+  OUT
+}
+
+enum DisputeResolution {
+  BUYER
+  SELLER
+  SPLIT
+  REFUND
+  CANCELLED
+}
+
+enum DealStatus {
+  DRAFT
+  PUBLISHED
+  ACCEPTED
+  PAID
+  IN_ESCROW
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  DISPUTED
+}
+
+enum DealVisibility {
+  PRIVATE
+  PUBLIC
+  LINK_ONLY
+}
+
+enum DealExpiryReason {
+  TIMEOUT
+  CANCELLED_BY_CREATOR
+  CANCELLED_BY_BUYER
+  PAYMENT_FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+}
+
+enum VirtualAccountStatus {
+  ACTIVE
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id        String    @id
   email     String    @unique
   image     String?
   kycStatus KycStatus @default(UNVERIFIED)
+  cart      Json
   createdAt DateTime  @default(now())
 
-  meansOfId MeansOfId?
-  store     Store?
+  meansOfId        MeansOfId?
+  store            Store?
+  address          Address[]
+  ratings          Rating[]
+  buyerOrders      Order[]           @relation("BuyerRelation")
+  searchPreference SearchPreference?
+  virtualAccount   VirtualAccount?
+  searchEvents     SearchEvent[]
+  searchHistories  SearchHistory[]
+  createdDeals     Deal[]            @relation("DealCreator")
+  buyingDeals      Deal[]            @relation("DealBuyer")
+  sellingDeals     Deal[]            @relation("DealSeller")
 }
 
 model MeansOfId {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  type       IdType
-  idNumber   String
-  firstName  String
-  surname    String
-  middleName String?
-  status     IdStatus @default(PENDING)
-  imageUrl   String
-  metadata   Json?
-  createdAt  DateTime @default(now())
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  type               IdType
+  idNumber           String
+  firstName          String
+  surname            String
+  middleName         String?
+  verificationStatus IdStatus @default(PENDING)
+  imageUrl           String
+  metadata           Json?
+  createdAt          DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -94,8 +270,32 @@ model Store {
   updatedAt       DateTime     @updatedAt
   userId          String       @unique
 
-  user     User      @relation(fields: [userId], references: [id])
+  user          User                @relation(fields: [userId], references: [id])
+  products      Product[]
+  orders        Order[]
+  settings      StoreSettings?
+  orderSequence StoreOrderSequence?
+  payouts       Payout[]
+
+  @@index([slug])
+  @@index([isActive, status])
+  @@index([createdAt])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  parentId    String?
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
   products Product[]
+
+  @@index([parentId])
 }
 
 model Product {
@@ -119,24 +319,14 @@ model Product {
   category       Category               @relation(fields: [categoryId], references: [id])
   specifications ProductSpecification[]
   tags           ProductTag[]
+  orderItems     OrderItem[]
+  rating         Rating[]
+  productEvents  ProductEvent[]
 
   @@unique([storeId, slug])
-}
-
-model Category {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  parentId    String?
-
-  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryTree")
-  products Product[]
-
-  @@index([parentId])
+  @@index([storeId])
+  @@index([categoryId])
+  @@index([createdAt])
 }
 
 model ProductSpecification {
@@ -145,7 +335,7 @@ model ProductSpecification {
   value     String
   productId String
 
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
@@ -171,10 +361,540 @@ model ProductTag {
   assignedBy String?
   createdAt  DateTime @default(now())
 
-  product Product @relation(fields: [productId], references: [id])
-  tag     Tag     @relation(fields: [tagId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([productId, tagId])
   @@index([tagId])
   @@index([productId])
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  street     String
+  city       String
+  state      String
+  zip        String
+  country    String
+  phone      String
+  userId     String
+  createdAt  DateTime @default(now())
+  isArchived Boolean  @default(false)
+
+  Order Order[]
+  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isArchived])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique
+  orderSequence Int
+  total         Int
+  status        OrderStatus @default(CREATED)
+  isCouponUsed  Boolean     @default(false)
+  coupon        Json        @default("{}")
+  userId        String
+  storeId       String
+  addressId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orderItems     OrderItem[]
+  user           User            @relation("BuyerRelation", fields: [userId], references: [id])
+  store          Store           @relation(fields: [storeId], references: [id])
+  address        Address         @relation(fields: [addressId], references: [id])
+  paymentIntents PaymentIntent[]
+
+  @@unique([storeId, orderSequence])
+  @@index([orderNumber])
+  @@index([userId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  quantity      Int
+  checkoutPrice Int
+  productId     String
+  orderId       String
+
+  product Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@id([orderId, productId])
+}
+
+model StoreOrderSequence {
+  storeId   String   @id
+  lastValue Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  rating    Int
+  review    String
+  userId    String
+  productId String
+  orderId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId, orderId])
+}
+
+model Coupon {
+  code        String   @id
+  description String
+  discount    Int
+  forNewUser  Boolean
+  forMember   Boolean  @default(false)
+  isPublic    Boolean
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model StoreSettings {
+  id                 String @id @default(cuid())
+  currency           String @default("USD")
+  timezone           String @default("UTC")
+  language           String @default("en")
+  taxRate            Int    @default(0)
+  emailNotifications Json   @default("{}")
+  storeId            String @unique
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model Consent {
+  id          String             @id @default(cuid())
+  subjectType ConsentSubjectType
+  subjectId   String
+  type        ConsentType
+  version     String
+  accepted    Boolean
+  acceptedAt  DateTime           @default(now())
+  createdAt   DateTime           @default(now())
+
+  @@index([subjectType, subjectId])
+  @@index([type])
+}
+
+model SearchPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  cloudSync     Boolean @default(true)
+  maxHistory    Int     @default(50)
+  retentionDays Int     @default(90)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SearchEvent {
+  id String @id @default(uuid())
+
+  userId    String?
+  sessionId String?
+
+  query      String
+  normalized String
+
+  context  SearchContext
+  entityId String?
+  source   SearchSource
+
+  dedupeHash String
+  occurredAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([dedupeHash])
+  @@index([normalized])
+  @@index([userId, occurredAt])
+  @@index([sessionId, occurredAt])
+}
+
+model SearchHistory {
+  id         String @id @default(uuid())
+  userId     String
+  query      String
+  normalized String
+
+  lastUsedAt DateTime @default(now())
+  useCount   Int      @default(1)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, normalized])
+  @@index([userId, lastUsedAt])
+}
+
+model SearchAggregate {
+  id String @id @default(cuid())
+
+  normalized String
+  context    SearchContext
+  entityId   String?
+
+  totalCount   Int      @default(0)
+  uniqueUsers  Int      @default(0)
+  lastSearched DateTime
+
+  window AggregateWindow
+
+  @@unique([normalized, context, entityId, window])
+  @@index([totalCount])
+}
+
+model ProductEvent {
+  id String @id @default(uuid())
+
+  userId    String?
+  sessionId String?
+
+  productId  String
+  storeId    String
+  categoryId String?
+
+  eventType ProductEventType
+  source    EventSource
+
+  dedupeHash String
+  occurredAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([dedupeHash])
+  @@index([productId, occurredAt])
+  @@index([userId, occurredAt])
+}
+
+model ProductAggregate {
+  id String @id @default(cuid())
+
+  productId  String
+  storeId    String
+  categoryId String?
+
+  views      Int @default(0)
+  purchases  Int @default(0)
+  addToCarts Int @default(0)
+
+  lastViewedAt DateTime?
+  window       AggregateWindow
+
+  @@unique([productId, window])
+  @@index([views])
+  @@index([purchases])
+}
+
+model ProductAssociation {
+  id String @id @default(cuid())
+
+  productAId String
+  productBId String
+
+  score         Float
+  lastUpdatedAt DateTime @updatedAt
+
+  @@unique([productAId, productBId])
+  @@index([score])
+}
+
+model PaymentGateway {
+  id        String          @id @default(cuid())
+  provider  GatewayProvider @unique
+  isActive  Boolean         @default(true)
+  config    Json
+  createdAt DateTime        @default(now())
+
+  paymentIntent PaymentIntent[]
+}
+
+model PaymentIntent {
+  id             String @id @default(uuid())
+  reference      String @unique
+  idempotencyKey String @unique
+
+  orderId  String
+  buyerId  String
+  sellerId String
+
+  gatewayId        String
+  gatewayProvider  GatewayProvider
+  gatewayReference String?         @unique
+  gatewayStatus    String?
+  gatewayPayload   Json?
+
+  amountTotal     Int
+  amountInSubunit Int
+  currency        String
+  paymentMethod   PaymentMethod
+
+  gatewayFee   Int
+  platformFee  Int
+  sellerAmount Int
+  escrowAmount Int
+
+  status        PaymentIntentStatus
+  failureReason String?
+
+  escrowStatus     EscrowStatus
+  escrowLockedAt   DateTime?
+  escrowReleaseAt  DateTime?
+  buyerConfirmedAt DateTime?
+  disputeOpenedAt  DateTime?
+
+  paidAt      DateTime?
+  expiredAt   DateTime?
+  completedAt DateTime?
+
+  metadata Json? @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order   Order          @relation(fields: [orderId], references: [id])
+  gateway PaymentGateway @relation(fields: [gatewayId], references: [id])
+  escrow  EscrowAccount?
+  deals   Deal[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([gatewayReference])
+}
+
+model WebhookEvent {
+  id              String          @id @default(uuid())
+  provider        GatewayProvider
+  reference       String
+  eventType       String
+  paymentIntentId String?
+  payload         Json?
+  createdAt       DateTime        @default(now())
+
+  @@unique([provider, reference, eventType])
+  @@index([paymentIntentId])
+}
+
+model EscrowAccount {
+  id              String @id @default(cuid())
+  paymentIntentId String @unique
+
+  amountLocked Int
+  currency     String
+
+  status        EscrowStatus         @default(HOLDING)
+  lockedAt      DateTime
+  releaseAt     DateTime
+  releasedAt    DateTime?
+  releaseReason EscrowReleaseReason?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paymentIntent PaymentIntent @relation(fields: [paymentIntentId], references: [id])
+  dispute       Dispute?
+  payouts       Payout[]
+  deals         Deal[]
+}
+
+model PlatformAccount {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model LedgerAccount {
+  id        String      @id @default(cuid())
+  ownerType AccountType
+  ownerId   String
+  currency  String
+  createdAt DateTime    @default(now())
+  isActive  Boolean     @default(true)
+  metadata  Json        @default("{}")
+
+  ledger LedgerEntry[]
+
+  @@unique([ownerType, ownerId, currency])
+}
+
+model LedgerEntry {
+  id        String                 @id @default(cuid())
+  accountId String
+  type      LedgerMovementCategory
+  direction LedgerDirection
+  amount    Int
+  currency  String
+  reference String
+  createdAt DateTime               @default(now())
+
+  ledgerAccount LedgerAccount @relation(fields: [accountId], references: [id])
+
+  @@unique([reference, accountId, type])
+  @@index([accountId, createdAt])
+}
+
+model Payout {
+  id              String @id @default(cuid())
+  escrowId        String
+  paymentIntentId String
+  storeId         String
+
+  amount   Int
+  currency String
+  status   PayoutStatus @default(PENDING)
+
+  initiatedAt DateTime  @default(now())
+  completedAt DateTime?
+
+  escrow EscrowAccount @relation(fields: [escrowId], references: [id])
+  store  Store         @relation(fields: [storeId], references: [id])
+}
+
+model Dispute {
+  id       String        @id @default(cuid())
+  escrowId String        @unique
+  reason   String
+  evidence Json
+  status   DisputeStatus @default(OPEN)
+
+  openedAt   DateTime           @default(now())
+  resolvedAt DateTime?
+  resolution DisputeResolution?
+
+  escrow EscrowAccount @relation(fields: [escrowId], references: [id])
+  deals  Deal[]
+}
+
+model Deal {
+  id        String @id @default(uuid())
+  reference String @unique
+
+  // Parties
+  creatorId  String
+  buyerId    String?
+  buyerEmail String
+  sellerId   String
+  acceptedBy String?
+
+  isLocked Boolean @default(false)
+
+  // Deal definition
+  title       String
+  description String
+  terms       Json
+  visibility  DealVisibility @default(PRIVATE)
+
+  // Pricing
+  amountTotal Int
+  currency    String
+
+  platformFee  Int
+  sellerAmount Int
+  escrowAmount Int
+
+  acceptedIp        String?
+  acceptedUserAgent String?
+
+  // Lifecycle
+  status DealStatus @default(DRAFT)
+
+  publishedAt  DateTime?
+  acceptedAt   DateTime?
+  paidAt       DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  expiredAt    DateTime?
+  expiryReason DealExpiryReason?
+
+  // Expiry rules
+  acceptBy   DateTime?
+  autoExpire DateTime
+
+  // Relations
+  paymentIntentId String?
+  escrowAccountId String?
+  disputeId       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  creator User  @relation("DealCreator", fields: [creatorId], references: [id])
+  buyer   User? @relation("DealBuyer", fields: [buyerId], references: [id])
+  seller  User  @relation("DealSeller", fields: [sellerId], references: [id])
+
+  paymentIntent        PaymentIntent?        @relation(fields: [paymentIntentId], references: [id])
+  escrow               EscrowAccount?        @relation(fields: [escrowAccountId], references: [id])
+  dispute              Dispute?              @relation(fields: [disputeId], references: [id])
+  dealAcceptanceTokens DealAcceptanceToken[]
+
+  @@index([creatorId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status, createdAt])
+}
+
+model DealAcceptanceToken {
+  id        String    @id @default(cuid())
+  dealId    String
+  email     String
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  deal      Deal     @relation(fields: [dealId], references: [id])
+
+  @@index([dealId])
+  @@index([email])
+}
+
+model AdminActionLog {
+  id String @id @default(cuid())
+
+  adminId  String
+  entity   String
+  entityId String
+
+  action String
+  reason String
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([adminId])
+}
+
+model VirtualAccount {
+  id       String          @id @default(cuid())
+  userId   String          @unique
+  provider GatewayProvider
+
+  accountNumber String               @unique
+  accountName   String
+  bankName      String
+  status        VirtualAccountStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
