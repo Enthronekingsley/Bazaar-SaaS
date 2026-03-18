@@ -75,40 +75,30 @@ import {
 
 // Schema based on Deal model
 const dealSchema = z.object({
-  // Parties
   buyerEmail: z.string().email("Please enter a valid email").optional(),
+
   sellerId: z.string().min(1, "Seller is required"),
 
-  // Deal definition
-  title: z
-    .string()
-    .min(5, "Title must be at least 5 characters")
-    .max(100, "Title too long"),
-  description: z
-    .string()
-    .min(20, "Description must be at least 20 characters")
-    .max(2000, "Description too long"),
-  terms: z.string().min(20, "Terms must be at least 20 characters"),
+  title: z.string().min(5).max(100),
 
-  // Visibility
+  description: z.string().min(20).max(2000),
+
+  terms: z.string().min(20),
+
   visibility: z.enum(["PRIVATE", "PUBLIC", "LINK_ONLY"]),
 
-  // Pricing
-  amountTotal: z
-    .number()
-    .min(100, "Minimum amount is 100")
-    .max(10000000, "Maximum amount exceeded"),
+  amountTotal: z.coerce.number().min(100).max(10000000),
+
   currency: z.string().default("NGN"),
 
-  // Expiry
-  acceptBy: z.string().optional(),
+  acceptBy: z.string().optional().or(z.literal("")),
+
   autoExpire: z.string().min(1, "Expiry date is required"),
 
-  // Optional fields
   isLocked: z.boolean().default(false),
 });
 
-type DealFormValues = z.infer<typeof dealSchema>;
+type DealFormValues = z.input<typeof dealSchema>;
 
 // Mock sellers data - replace with actual data from your API
 const sellers = [
