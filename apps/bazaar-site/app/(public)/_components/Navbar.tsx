@@ -215,24 +215,6 @@ const Navbar = () => {
                         >
                           <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-primary-500 to-primary-400" />
 
-                          {/* {item.dropdown.map((dropItem, idx) => (
-                          <Link
-                            key={dropItem.label}
-                            href={dropItem.href}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-all group relative"
-                          >
-                            <span className="text-gray-400 group-hover:text-primary transition-colors">
-                              {dropItem.icon}
-                            </span>
-                            <span className="flex-1">{dropItem.label}</span>
-                            <ArrowRight className="h-3.5 w-3.5 text-gray-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-
-                            {idx === 0 && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
-                            )}
-                          </Link>
-                        ))} */}
-
                           {item.dropdown.map((dropItem) => {
                             const isActive = pathname === dropItem.href;
 
@@ -241,12 +223,12 @@ const Navbar = () => {
                                 key={dropItem.label}
                                 href={dropItem.href}
                                 className={`flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all group relative
-        ${
-          isActive
-            ? "text-primary bg-primary/5"
-            : "text-gray-700 hover:bg-gray-50 hover:text-primary"
-        }
-      `}
+                                ${
+                                  isActive
+                                    ? "text-primary bg-primary/5"
+                                    : "text-gray-700 hover:bg-gray-50 hover:text-primary"
+                                }
+                                `}
                               >
                                 <span
                                   className={`transition-colors ${
