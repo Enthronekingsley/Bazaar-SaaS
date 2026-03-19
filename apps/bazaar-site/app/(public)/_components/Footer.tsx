@@ -89,7 +89,7 @@ const Footer = () => {
             <div className="lg:col-span-1">
               <Link href="/" className="inline-block mb-4">
                 <Image
-                  src="/bazaar_logo_black.png"
+                  src="/logos/bazaar_logo.png"
                   alt="Bazaar"
                   width={120}
                   height={40}
