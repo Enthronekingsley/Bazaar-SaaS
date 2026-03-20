@@ -282,13 +282,21 @@ const Navbar = () => {
 
               <Button
                 variant="outline"
+                onClick={() => {
+                  window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/deal/create`;
+                }}
                 className="hidden sm:inline-flex text-black border-gray-200 hover:border-primary-500 hover:bg-primary-50 rounded-lg px-4 py-2 text-sm font-medium h-9 gap-1.5 transition-all"
               >
                 <Zap className="h-4 w-4" />
                 Create Deal
               </Button>
 
-              <Button className="bg-primary hover:bg-primary-600 text-white rounded-lg px-4 py-2 text-sm font-medium h-9 gap-1.5 shadow-md hover:shadow-lg transition-all hidden sm:inline-flex">
+              <Button
+                onClick={() => {
+                  window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/store/create`;
+                }}
+                className="bg-primary hover:bg-primary-600 text-white rounded-lg px-4 py-2 text-sm font-medium h-9 gap-1.5 shadow-md hover:shadow-lg transition-all hidden sm:inline-flex"
+              >
                 <Store className="h-4 w-4" />
                 Create Store
               </Button>
@@ -395,12 +403,20 @@ const Navbar = () => {
                   </Link>
                   <Button
                     variant="outline"
+                    onClick={() => {
+                      window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/deal/create`;
+                    }}
                     className="w-full justify-center gap-2 h-11"
                   >
                     <Zap className="h-4 w-4" />
                     Create Deal
                   </Button>
-                  <Button className="w-full bg-primary hover:bg-primary-600 text-white justify-center gap-2 h-11 shadow-md">
+                  <Button
+                    onClick={() => {
+                      window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/store/create`;
+                    }}
+                    className="w-full bg-primary hover:bg-primary-600 text-white justify-center gap-2 h-11 shadow-md"
+                  >
                     <Store className="h-4 w-4" />
                     Create Store
                   </Button>
