@@ -12,7 +12,7 @@ fastify.get("/", async (request, reply) => {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: PORT, host: "0.0.0.0.0" });
+    await fastify.listen({ port: PORT, host: "0.0.0.0" });
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);
